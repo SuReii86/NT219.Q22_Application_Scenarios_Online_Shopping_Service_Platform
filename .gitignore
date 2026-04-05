@@ -1,0 +1,78 @@
+# ==========================================
+# 1. SECRETS & KEYS (QUAN TRỌNG NHẤT)
+# ==========================================
+# Bỏ qua tất cả các chứng chỉ và khóa mã hóa
+*.key
+*.pem
+*.crt
+*.pfx
+
+# Ngoại trừ thư mục certs chứa script tạo cert, nhưng bỏ qua các file sinh ra trong đó
+infra/certs/*.key
+infra/certs/*.pem
+infra/certs/*.crt
+!infra/certs/gen_certs.sh
+
+# Bỏ qua các file lưu unseal key hoặc root token của Vault (nếu bạn có lưu tạm ra file text)
+vault_keys.txt
+vault_root_token.txt
+*.secret
+
+# ==========================================
+# 2. ENVIRONMENT VARIABLES
+# ==========================================
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# ==========================================
+# 3. DỮ LIỆU DATABASE & LOGS
+# ==========================================
+# Bỏ qua thư mục mount data của MongoDB và các dịch vụ khác
+mongo_data/
+/data/db/
+/opt/keycloak/data/h2/
+
+# Bỏ qua các file log hệ thống (ngoại trừ thư mục EVIDENCE vì bạn cần nộp minh chứng)
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ==========================================
+# 4. OS & IDE CONFIGURATIONS
+# ==========================================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.suo
+*.user
+
+# ==========================================
+# 5. NGÔN NGỮ & FRAMEWORK (Cho Microservices)
+# ==========================================
+# Python (Dùng cho test script hoặc service)
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+
+# Node.js (Nếu dùng cho API Gateway/Service)
+node_modules/
+dist/
+build/
+
+# C# / .NET (Nếu dùng cho các service)
+bin/
+obj/
+*.userprefs
+
+# C++ / C (Nếu có compile tool mã hóa riêng)
+*.out
+*.o
+*.exe
