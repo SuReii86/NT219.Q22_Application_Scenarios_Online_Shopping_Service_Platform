@@ -1,0 +1,159 @@
+services:
+  # ==========================================
+  # 1. DATABASE LAYER
+  # ==========================================
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    # Chỉ cho phép truy cập cục bộ từ laptop của bạn
+    ports:
+      - "127.0.0.1:27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: securepassword123
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - nt219_net
+
+  # ==========================================
+  # 2. IDENTITY & AUTHENTICATION
+  # ==========================================
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    container_name: keycloak
+    # Chế độ dev hỗ trợ HTTP cục bộ
+    command: start-dev
+    # Yêu cầu cổng 8180
+    ports:
+      - "127.0.0.1:8180:8080"
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      # Tự động import realm (nếu file tồn tại)
+      KEYCLOAK_IMPORT: /opt/keycloak/data/import/realm.json
+    volumes:
+      - ./idp:/opt/keycloak/data/import
+    networks:
+      - nt219_net
+
+  # ==========================================
+  # 3. KEY MANAGEMENT & SECRETS
+  # ==========================================
+  vault:
+    image: hashicorp/vault:latest
+    container_name: vault
+    # Yêu cầu cổng 8200
+    ports:
+      - "127.0.0.1:8200:8200"
+    environment:
+      VAULT_LOCAL_CONFIG: '{"backend": {"file": {"path": "/vault/file"}}, "listener": {"tcp": {"address": "0.0.0.0:8200", "tls_disable": 1}}}'
+    command: server
+    cap_add:
+      - IPC_LOCK
+    volumes:
+      - vault_data:/vault/file
+    networks:
+      - nt219_net
+
+  # ==========================================
+  # 4. POLICY ENGINE
+  # ==========================================
+  opa:
+    image: openpolicyagent/opa:latest
+    container_name: opa
+    # Yêu cầu cổng 8181
+    ports:
+      - "127.0.0.1:8181:8181"
+    command: run --server --log-level=debug /policies
+    volumes:
+      - ./opa:/policies
+    networks:
+      - nt219_net
+
+  # ==========================================
+  # 5. MONITORING STUBS
+  # ==========================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    # Yêu cầu cổng 9090
+    ports:
+      - "127.0.0.1:9090:9090"
+    networks:
+      - nt219_net
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    # Yêu cầu cổng 3000
+    ports:
+      - "127.0.0.1:3000:3000"
+    networks:
+      - nt219_net
+
+  # ==========================================
+  # 6. API GATEWAY & MICROSERVICES (STUBS)
+  # ==========================================
+  api-gateway:
+    image: envoyproxy/envoy:v1.30-latest
+    container_name: api-gateway
+    # Yêu cầu cổng 8080/8443
+    ports:
+      - "8080:8080"
+      - "8443:8443"
+    networks:
+      - nt219_net
+
+  catalog-service:
+    image: node:24-alpine
+    container_name: catalog-service
+    command: tail -f /dev/null
+    ports:
+      - "127.0.0.1:8001:8001"
+    networks:
+      - nt219_net
+
+  cart-service:
+    image: node:24-alpine
+    container_name: cart-service
+    command: tail -f /dev/null
+    ports:
+      - "127.0.0.1:8002:8002"
+    networks:
+      - nt219_net
+
+  order-service:
+    image: node:24-alpine
+    container_name: order-service
+    command: tail -f /dev/null
+    ports:
+      - "127.0.0.1:8003:8003"
+    networks:
+      - nt219_net
+
+  payment-service:
+    image: node:24-alpine
+    container_name: payment-service
+    command: tail -f /dev/null
+    ports:
+      - "127.0.0.1:8004:8004"
+    networks:
+      - nt219_net
+
+  user-service:
+    image: node:24-alpine
+    container_name: user-service
+    command: tail -f /dev/null
+    ports:
+      - "127.0.0.1:8005:8005"
+    networks:
+      - nt219_net
+
+networks:
+  nt219_net:
+    driver: bridge
+
+volumes:
+  mongo_data:
+  vault_data:
