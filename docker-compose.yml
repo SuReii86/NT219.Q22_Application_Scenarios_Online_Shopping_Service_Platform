@@ -2,19 +2,6 @@ services:
   # ==========================================
   # 1. DATABASE LAYER
   # ==========================================
-  mongodb:
-    image: mongo:latest
-    container_name: mongodb
-    # Chỉ cho phép truy cập cục bộ từ laptop của bạn
-    ports:
-      - "127.0.0.1:27017:27017"
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: securepassword123
-    volumes:
-      - mongo_data:/data/db
-    networks:
-      - nt219_net
 
   # ==========================================
   # 2. IDENTITY & AUTHENTICATION
@@ -37,18 +24,19 @@ services:
     networks:
       - nt219_net
 
-  # ==========================================
+# ==========================================
   # 3. KEY MANAGEMENT & SECRETS
   # ==========================================
   vault:
     image: hashicorp/vault:latest
     container_name: vault
-    # Yêu cầu cổng 8200
     ports:
       - "127.0.0.1:8200:8200"
+    env_file:
+      - .env
     environment:
-      VAULT_LOCAL_CONFIG: '{"backend": {"file": {"path": "/vault/file"}}, "listener": {"tcp": {"address": "0.0.0.0:8200", "tls_disable": 1}}}'
-    command: server
+      VAULT_LOCAL_CONFIG: '{"ui": true}'
+    command: server -dev
     cap_add:
       - IPC_LOCK
     volumes:
@@ -143,17 +131,23 @@ services:
 
   user-service:
     image: node:24-alpine
+    build: ./services/user
     container_name: user-service
-    command: tail -f /dev/null
+    volumes:
+      - ./services/user:/app
+      - /app/node_modules
     ports:
-      - "127.0.0.1:8005:8005"
+      - "8005:8005"
+    env_file:
+      - .env
     networks:
       - nt219_net
+    depends_on:
+      - vault
 
 networks:
   nt219_net:
     driver: bridge
 
 volumes:
-  mongo_data:
   vault_data:
