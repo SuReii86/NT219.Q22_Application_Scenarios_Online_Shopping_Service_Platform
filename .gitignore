@@ -76,3 +76,17 @@ obj/
 *.out
 *.o
 *.exe
+
+# Bỏ qua thư viện tải về
+node_modules/
+
+# Bỏ qua các file biến môi trường (Chứa mật khẩu, secret)
+.env
+.env.*
+
+# Bỏ qua chứng chỉ số HTTPS (Chìa khóa bảo mật)
+infra/certs/
+
+# Bỏ qua data của Vault và Keycloak (Nếu có mount ra ngoài)
+vault_data/
+idp/
