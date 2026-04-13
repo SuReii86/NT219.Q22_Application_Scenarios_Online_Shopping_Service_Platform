@@ -90,6 +90,12 @@ services:
     ports:
       - "8080:8080"
       - "8443:8443"
+    volumes:
+      - ./infra/envoy/envoy.yaml:/etc/envoy/envoy.yaml:ro
+      - ./infra/certs:/etc/envoy/certs:ro
+    depends_on:
+      - user-service
+      - payment-service
     networks:
       - nt219_net
 
@@ -120,14 +126,22 @@ services:
     networks:
       - nt219_net
 
+# 🚀 ĐÃ CẬP NHẬT: Đánh thức Payment Service để nó build code giống User Service
   payment-service:
     image: node:24-alpine
+    build: ./services/payment
     container_name: payment-service
-    command: tail -f /dev/null
+    volumes:
+      - ./services/payment:/app
+      - /app/node_modules
     ports:
-      - "127.0.0.1:8004:8004"
+      - "8004:8004"
+    env_file:
+      - .env
     networks:
       - nt219_net
+    depends_on:
+      - vault
 
   user-service:
     image: node:24-alpine
