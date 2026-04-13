@@ -45,7 +45,7 @@ static_resources:
     load_assignment:
       cluster_name: user_service
       endpoints:
-      - lb_endpoints:
+      - lb_endpoints: 
         - endpoint:
             address:
               socket_address:
