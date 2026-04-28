@@ -18,23 +18,32 @@ const vault = require('node-vault')({
 // Hàm khởi động toàn bộ hệ thống
 async function startServer() {
   try {
-    console.log("[1/3] Đang gọi Vault lấy link Database...");
-    const vaultRes = await vault.read('secret/data/mongodb-credentials');
-    const mongoUri = vaultRes.data.data.MONGODB_URI; 
+    console.log("Connect to Vault to retrieve Database...");
+    let mongoURI;
+    try {
+      const vaultRes = await vault.read('secret/data/mongodb-credentials');
+      mongoURI = vaultRes.data.data.MONGODB_URI;
+    }
+    catch (vaultError) {
+      console.warn("Unable to access to Vault: ", vaultError.message);
+      mongoURI = process.env.MONGODB_URI;
+    }
 
-    console.log("[2/3] Đang kết nối MongoDB Atlas...");
-    await mongoose.connect(mongoUri);
-    console.log("Kết nối Database THÀNH CÔNG!");
+    if (!mongoURI) {
+      throw new Error("MongoDB URI not found");
+    }
+    console.log("Connect to mongoDB");
+    await mongoose.connect(mongoURI);
+    console.log("SUCCESSFUL to DB");
 
-    // Mở cổng lắng nghe (Trong file compose bạn cấu hình cổng 8005)
     const PORT = 8005;
+    
     app.listen(PORT, () => {
-      console.log(`[3/3] User Service đã chạy! API đang mở tại cổng ${PORT}`);
+      console.log(`User service deploy successfully, PORT: ${PORT}`)
     });
-
-  } catch (error) {
-    console.error("LỖI KHỞI ĐỘNG SERVER:", error.message);
-    process.exit(1); // Nếu lỗi thì tắt container luôn để Docker tự khởi động lại
+  }
+  catch (error) {
+    console.error("Unable to start service: ", error.message);
   }
 }
 

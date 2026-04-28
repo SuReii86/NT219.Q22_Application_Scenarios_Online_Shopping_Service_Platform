@@ -1,11 +1,7 @@
-services:
-  # ==========================================
-  # 1. DATABASE LAYER
-  # ==========================================
+version: '3.8'
 
-  # ==========================================
-  # 2. IDENTITY & AUTHENTICATION
-  # ==========================================
+services:
+  # 1. IDENTITY & AUTHENTICATION
   keycloak:
     image: quay.io/keycloak/keycloak:latest
     container_name: keycloak
@@ -24,29 +20,29 @@ services:
     networks:
       - nt219_net
 
-# ==========================================
-  # 3. KEY MANAGEMENT & SECRETS
-  # ==========================================
+  # 2. KEY MANAGEMENT & SECRETS
   vault:
     image: hashicorp/vault:latest
     container_name: vault
     ports:
-      - "127.0.0.1:8200:8200"
+      - "8200:8200"
     env_file:
       - .env
-    environment:
-      VAULT_LOCAL_CONFIG: '{"ui": true}'
-    command: server -dev
+    command: server
     cap_add:
       - IPC_LOCK
     volumes:
       - vault_data:/vault/file
+      - ./vault-config.json:/vault/config/vault-config.json
     networks:
       - nt219_net
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:8200/v1/sys/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
-  # ==========================================
-  # 4. POLICY ENGINE
-  # ==========================================
+  # 3. POLICY ENGINE
   opa:
     image: openpolicyagent/opa:latest
     container_name: opa
@@ -59,9 +55,7 @@ services:
     networks:
       - nt219_net
 
-  # ==========================================
-  # 5. MONITORING STUBS
-  # ==========================================
+  # 4. MONITORING STUBS
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
@@ -80,9 +74,7 @@ services:
     networks:
       - nt219_net
 
-  # ==========================================
-  # 6. API GATEWAY & MICROSERVICES (STUBS)
-  # ==========================================
+  # 5. API GATEWAY & MICROSERVICES (STUBS)
   api-gateway:
     image: envoyproxy/envoy:v1.30-latest
     container_name: api-gateway
@@ -126,7 +118,6 @@ services:
     networks:
       - nt219_net
 
-# 🚀 ĐÃ CẬP NHẬT: Đánh thức Payment Service để nó build code giống User Service
   payment-service:
     image: node:24-alpine
     build: ./services/payment
@@ -141,7 +132,8 @@ services:
     networks:
       - nt219_net
     depends_on:
-      - vault
+        vault:
+            condition: service_healthy
 
   user-service:
     image: node:24-alpine
@@ -157,7 +149,8 @@ services:
     networks:
       - nt219_net
     depends_on:
-      - vault
+        vault:
+            condition: service_healthy
 
 networks:
   nt219_net:
