@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node payment.js",
+    "dev": "nodemon payment.js"
   },
   "keywords": [],
   "author": "",
@@ -20,7 +21,8 @@
     "libsodium-wrappers": "^0.8.2",
     "mongodb": "^7.1.1",
     "mongoose": "^9.4.1",
-    "stripe": "^22.0.0"
+    "stripe": "^22.0.0",
+    "node-vault": "^0.9.22"
   },
   "devDependencies": {
     "jest": "^30.3.0",
