@@ -1,160 +1,259 @@
-version: '3.8'
-
 services:
-  # 1. IDENTITY & AUTHENTICATION
   keycloak:
     image: quay.io/keycloak/keycloak:latest
     container_name: keycloak
-    # Chế độ dev hỗ trợ HTTP cục bộ
-    command: start-dev
-    # Yêu cầu cổng 8180
+    command: start-dev --import-realm
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USER}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
     ports:
       - "127.0.0.1:8180:8080"
-    environment:
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin
-      # Tự động import realm (nếu file tồn tại)
-      KEYCLOAK_IMPORT: /opt/keycloak/data/import/realm.json
     volumes:
-      - ./idp:/opt/keycloak/data/import
+      - ./idp:/opt/keycloak/data/import:ro
     networks:
       - nt219_net
-
-  # 2. KEY MANAGEMENT & SECRETS
+  vault-init:
+    image: hashicorp/vault:latest
+    container_name: vault-init
+    depends_on:
+      - vault
+    environment:
+      VAULT_ADDR: http://vault:8200
+      VAULT_TOKEN: ${VAULT_TOKEN}
+      MONGODB_URI: ${MONGODB_URI}
+      MONGODB_VAULT_PATH: ${MONGODB_VAULT_PATH}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+    volumes:
+      - ./vault/setup-vault.sh:/setup-vault.sh:ro
+    command: sh /setup-vault.sh
+    networks:
+      - nt219_net
   vault:
     image: hashicorp/vault:latest
     container_name: vault
-    ports:
-      - "8200:8200"
-    env_file:
-      - .env
-    command: server
+    command: server -dev -dev-root-token-id=${VAULT_TOKEN} -dev-listen-address=0.0.0.0:8200
     cap_add:
       - IPC_LOCK
-    volumes:
-      - vault_data:/vault/file
-      - ./vault-config.json:/vault/config/vault-config.json
+    environment:
+      VAULT_ADDR: http://0.0.0.0:8200
+    ports:
+      - "127.0.0.1:8200:8200"
     networks:
       - nt219_net
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:8200/v1/sys/health"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
 
-  # 3. POLICY ENGINE
   opa:
     image: openpolicyagent/opa:latest
     container_name: opa
-    # Yêu cầu cổng 8181
+    command: run --server --log-level=debug /policies
     ports:
       - "127.0.0.1:8181:8181"
-    command: run --server --log-level=debug /policies
     volumes:
-      - ./opa:/policies
+      - ./opa:/policies:ro
     networks:
       - nt219_net
 
-  # 4. MONITORING STUBS
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
-    # Yêu cầu cổng 9090
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --web.enable-lifecycle
     ports:
       - "127.0.0.1:9090:9090"
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
     networks:
       - nt219_net
 
   grafana:
     image: grafana/grafana:latest
     container_name: grafana
-    # Yêu cầu cổng 3000
     ports:
       - "127.0.0.1:3001:3000"
     networks:
       - nt219_net
 
-  # 5. API GATEWAY & MICROSERVICES (STUBS)
   api-gateway:
     image: envoyproxy/envoy:v1.30-latest
     container_name: api-gateway
-    # Yêu cầu cổng 8080/8443
+    command:
+      - envoy
+      - -c
+      - /etc/envoy/envoy.yaml
+      - --service-cluster
+      - api-gateway
+      - --log-level
+      - info
     ports:
       - "8080:8080"
       - "8443:8443"
+      - "127.0.0.1:9901:9901"
     volumes:
       - ./infra/envoy/envoy.yaml:/etc/envoy/envoy.yaml:ro
       - ./infra/certs:/etc/envoy/certs:ro
     depends_on:
+      - keycloak
       - user-service
+      - catalog-service
+      - cart-service
+      - order-service
       - payment-service
+      - inventory-service
+      - shipping-service
+      - notification-service
     networks:
       - nt219_net
 
   catalog-service:
-    image: node:24-alpine
+    build:
+      context: .
+      dockerfile: services/Dockerfile
+      args:
+        SERVICE_DIR: services/catalog
     container_name: catalog-service
-    command: tail -f /dev/null
+    env_file:
+      - .env
     ports:
       - "127.0.0.1:8001:8001"
+    depends_on:
+      - vault
+      - vault-init
+      - keycloak
     networks:
       - nt219_net
 
   cart-service:
-    image: node:24-alpine
+    build:
+      context: .
+      dockerfile: services/Dockerfile
+      args:
+        SERVICE_DIR: services/cart
     container_name: cart-service
-    command: tail -f /dev/null
+    env_file:
+      - .env
     ports:
       - "127.0.0.1:8002:8002"
+    depends_on:
+      - vault
+      - vault-init
+      - keycloak
+      - catalog-service
     networks:
       - nt219_net
 
   order-service:
-    image: node:24-alpine
+    build:
+      context: .
+      dockerfile: services/Dockerfile
+      args:
+        SERVICE_DIR: services/order
     container_name: order-service
-    command: tail -f /dev/null
+    env_file:
+      - .env
     ports:
       - "127.0.0.1:8003:8003"
+    depends_on:
+      - vault
+      - vault-init
+      - keycloak
+      - cart-service
+      - payment-service
+      - inventory-service
+      - shipping-service
+      - notification-service
     networks:
       - nt219_net
 
   payment-service:
-    image: node:24-alpine
-    build: ./services/payment
+    build:
+      context: .
+      dockerfile: services/Dockerfile
+      args:
+        SERVICE_DIR: services/payment
     container_name: payment-service
-    volumes:
-      - ./services/payment:/app
-      - /app/node_modules
-    ports:
-      - "8004:8004"
     env_file:
       - .env
+    ports:
+      - "127.0.0.1:8004:8004"
+    depends_on:
+      - vault
+      - vault-init
+      - keycloak
     networks:
       - nt219_net
-    depends_on:
-        vault:
-            condition: service_healthy
 
   user-service:
-    image: node:24-alpine
-    build: ./services/user
+    build:
+      context: .
+      dockerfile: services/Dockerfile
+      args:
+        SERVICE_DIR: services/user
     container_name: user-service
-    volumes:
-      - ./services/user:/app
-      - /app/node_modules
-    ports:
-      - "8005:8005"
     env_file:
       - .env
+    ports:
+      - "127.0.0.1:8005:8005"
+    depends_on:
+      - vault
+      - vault-init
+      - keycloak
     networks:
       - nt219_net
+
+  inventory-service:
+    build:
+      context: .
+      dockerfile: services/Dockerfile
+      args:
+        SERVICE_DIR: services/inventory
+    container_name: inventory-service
+    env_file:
+      - .env
+    ports:
+      - "127.0.0.1:8006:8006"
     depends_on:
-        vault:
-            condition: service_healthy
+      - vault
+      - vault-init
+      - keycloak
+    networks:
+      - nt219_net
+
+  shipping-service:
+    build:
+      context: .
+      dockerfile: services/Dockerfile
+      args:
+        SERVICE_DIR: services/shipping
+    container_name: shipping-service
+    env_file:
+      - .env
+    ports:
+      - "127.0.0.1:8007:8007"
+    depends_on:
+      - vault
+      - vault-init
+      - keycloak
+    networks:
+      - nt219_net
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: services/Dockerfile
+      args:
+        SERVICE_DIR: services/notification
+    container_name: notification-service
+    env_file:
+      - .env
+    ports:
+      - "127.0.0.1:8008:8008"
+    depends_on:
+      - vault
+      - vault-init
+      - keycloak
+    networks:
+      - nt219_net
 
 networks:
   nt219_net:
     driver: bridge
-
-volumes:
-  vault_data:
