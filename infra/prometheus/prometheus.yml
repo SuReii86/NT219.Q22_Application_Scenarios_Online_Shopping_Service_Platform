@@ -1,0 +1,45 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["prometheus:9090"]
+
+  - job_name: envoy
+    metrics_path: /stats/prometheus
+    static_configs:
+      - targets: ["api-gateway:9901"]
+
+  - job_name: catalog-service
+    static_configs:
+      - targets: ["catalog-service:8001"]
+
+  - job_name: cart-service
+    static_configs:
+      - targets: ["cart-service:8002"]
+
+  - job_name: order-service
+    static_configs:
+      - targets: ["order-service:8003"]
+
+  - job_name: payment-service
+    static_configs:
+      - targets: ["payment-service:8004"]
+
+  - job_name: user-service
+    static_configs:
+      - targets: ["user-service:8005"]
+
+  - job_name: inventory-service
+    static_configs:
+      - targets: ["inventory-service:8006"]
+
+  - job_name: shipping-service
+    static_configs:
+      - targets: ["shipping-service:8007"]
+
+  - job_name: notification-service
+    static_configs:
+      - targets: ["notification-service:8008"]
