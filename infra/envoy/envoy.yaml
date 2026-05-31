@@ -41,10 +41,19 @@ static_resources:
                         - match: { prefix: "/api/notifications" }
                           route: { cluster: notification_service }
                 http_filters:
+                  - name: envoy.filters.http.ext_authz
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthz
+                      transport_api_version: V3
+                      failure_mode_allow: false
+                      grpc_service:
+                        envoy_grpc:
+                          cluster_name: opa_ext_authz
+                        timeout: 0.5s
+
                   - name: envoy.filters.http.router
                     typed_config:
                       "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
-
     - name: listener_https
       address:
         socket_address:
@@ -79,9 +88,19 @@ static_resources:
                         - match: { prefix: "/api/notifications" }
                           route: { cluster: notification_service }
                 http_filters:
+                  - name: envoy.filters.http.ext_authz
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthz
+                      transport_api_version: V3
+                      failure_mode_allow: false
+                      grpc_service:
+                        envoy_grpc:
+                          cluster_name: opa_ext_authz
+                        timeout: 0.5s
+
                   - name: envoy.filters.http.router
                     typed_config:
-                      "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router      
           transport_socket:
             name: envoy.transport_sockets.tls
             typed_config:
@@ -96,6 +115,20 @@ static_resources:
                       filename: "/etc/envoy/certs/key.pem"
 
   clusters:
+    - name: opa_ext_authz
+      connect_timeout: 0.5s
+      type: STRICT_DNS
+      lb_policy: ROUND_ROBIN
+      http2_protocol_options: {}
+      load_assignment:
+        cluster_name: opa_ext_authz
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: opa
+                      port_value: 9191
     - name: user_service
       connect_timeout: 2s
       type: STRICT_DNS

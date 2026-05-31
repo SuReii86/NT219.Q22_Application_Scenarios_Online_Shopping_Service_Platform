@@ -42,11 +42,18 @@ services:
       - nt219_net
 
   opa:
-    image: openpolicyagent/opa:latest
+    image: openpolicyagent/opa:latest-envoy
     container_name: opa
-    command: run --server --log-level=debug /policies
+    command:
+      - run
+      - --server
+      - --config-file=/policies/opa-config.yaml
+      - --log-level=debug
+      - /policies/policy.rego
     ports:
       - "127.0.0.1:8181:8181"
+    expose:
+      - "9191"
     volumes:
       - ./opa:/policies:ro
     networks:
@@ -92,6 +99,7 @@ services:
       - ./infra/envoy/envoy.yaml:/etc/envoy/envoy.yaml:ro
       - ./infra/certs:/etc/envoy/certs:ro
     depends_on:
+      - opa
       - keycloak
       - user-service
       - catalog-service
