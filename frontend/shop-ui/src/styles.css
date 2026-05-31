@@ -280,3 +280,40 @@ h2 {
   color: #17202a;
   background: #eef2f7;
 }
+
+.checkout-layout {
+  display: grid;
+  gap: 20px;
+  padding: 24px 32px;
+}
+
+.checkout-panel {
+  max-width: 720px;
+  padding: 20px;
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.checkout-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 8px;
+  color: #ffffff;
+  background: #2457c5;
+}
+
+.checkout-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.payment-form {
+  display: grid;
+  gap: 16px;
+  margin-top: 20px;
+}

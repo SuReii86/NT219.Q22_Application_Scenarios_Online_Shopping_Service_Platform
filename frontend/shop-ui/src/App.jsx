@@ -4,7 +4,7 @@ import { useAuth } from './auth/AuthProvider.jsx';
 import { API_GATEWAY_URL, apiRequest, getJson, postJson } from './lib/api.js';
 import { CartView } from './features/cart/CartView.jsx';
 import { ProductList } from './features/catalog/ProductList.jsx';
-
+import { CheckoutPage } from './features/checkout/CheckoutPage.jsx';
 
 
 export default function App() {
@@ -14,7 +14,8 @@ export default function App() {
   const [cartStatus, setCartStatus] = useState('Login to load your cart.');
   const [refreshingCart, setRefreshingCart] = useState(false);
   const [addingProductId, setAddingProductId] = useState('');
-
+  const [view, setView] = useState('shop');
+  
   const loadCart = useCallback(async () => {
     if (!authenticated) {
       setCart(null);
@@ -81,6 +82,10 @@ export default function App() {
     }
   }
 
+  if (view === 'checkout') {
+    return <CheckoutPage onBack={() => setView('shop')} />;
+  }
+
   return (
     <div className="app-shell">
       <header className="topbar">
@@ -107,10 +112,11 @@ export default function App() {
             </button>
           )}
 
-          <button type="button" className="nav-button">
+          <button type="button" className="nav-button" onClick={() => setView('checkout')}>
             <ShoppingCart size={18} />
             Cart
           </button>
+
           <button type="button" className="nav-button">
             <User size={18} />
             Profile
