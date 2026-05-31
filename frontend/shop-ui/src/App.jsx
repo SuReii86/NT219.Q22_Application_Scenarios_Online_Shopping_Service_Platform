@@ -1,42 +1,69 @@
-import React, { useState } from 'react';
-import { LogIn, ShoppingCart, User, Search, ShieldAlert } from 'lucide-react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { LogIn, Search, ShieldAlert, ShoppingCart, User } from 'lucide-react';
 import { useAuth } from './auth/AuthProvider.jsx';
-import { API_GATEWAY_URL, apiRequest } from './lib/api.js';
+import { API_GATEWAY_URL, apiRequest, getJson, postJson } from './lib/api.js';
+import { CartView } from './features/cart/CartView.jsx';
+import { ProductList } from './features/catalog/ProductList.jsx';
 
-const demoProducts = [
-  {
-    productId: 'P1001',
-    name: 'Gaming Laptop',
-    category: 'electronics',
-    price: 129900,
-    currency: 'usd',
-  },
-  {
-    productId: 'P1002',
-    name: 'Bluetooth Headset',
-    category: 'audio',
-    price: 7900,
-    currency: 'usd',
-  },
-  {
-    productId: 'P1003',
-    name: 'Mechanical Mouse',
-    category: 'accessories',
-    price: 3900,
-    currency: 'usd',
-  },
-];
 
-function formatMoney(amount, currency) {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: currency.toUpperCase(),
-  }).format(amount / 100);
-}
 
 export default function App() {
   const { initialized, authenticated, profile, authError, login, logout } = useAuth();
   const [securityMessage, setSecurityMessage] = useState('');
+  const [cart, setCart] = useState(null);
+  const [cartStatus, setCartStatus] = useState('Login to load your cart.');
+  const [refreshingCart, setRefreshingCart] = useState(false);
+  const [addingProductId, setAddingProductId] = useState('');
+
+  const loadCart = useCallback(async () => {
+    if (!authenticated) {
+      setCart(null);
+      setCartStatus('Login to load your cart.');
+      return;
+    }
+
+    setRefreshingCart(true);
+    setCartStatus('Loading cart...');
+
+    try {
+      const data = await getJson('/api/cart');
+      setCart(data);
+      setCartStatus('Cart loaded from API Gateway.');
+    } catch (error) {
+      setCart(null);
+      setCartStatus(`Cart unavailable: ${error.status || 'gateway not running'}.`);
+    } finally {
+      setRefreshingCart(false);
+    }
+  }, [authenticated]);
+
+  useEffect(() => {
+    loadCart();
+  }, [loadCart]);
+
+  async function addToCart(product) {
+    if (!authenticated) {
+      setCartStatus('Login before adding products to cart.');
+      return;
+    }
+
+    setAddingProductId(product.productId);
+    setCartStatus(`Adding ${product.name}...`);
+
+    try {
+      await postJson('/api/cart/items', {
+        productId: product.productId,
+        quantity: 1,
+      });
+
+      setCartStatus(`${product.name} added to cart.`);
+      await loadCart();
+    } catch (error) {
+      setCartStatus(`Add to cart failed: ${error.status || 'gateway not running'}.`);
+    } finally {
+      setAddingProductId('');
+    }
+  }
 
   async function testInvalidToken() {
   setSecurityMessage('Testing invalid token...');
@@ -110,37 +137,13 @@ export default function App() {
       </section>
 
       <main className="shop-layout">
-        <section className="catalog-panel">
-          <div className="section-heading">
-            <p className="eyebrow">Catalog</p>
-            <h2>Products</h2>
-          </div>
-
-          <div className="product-grid">
-            {demoProducts.map((product) => (
-              <article className="product-card" key={product.productId}>
-                <div>
-                  <p className="product-category">{product.category}</p>
-                  <h3>{product.name}</h3>
-                </div>
-                <p className="price">{formatMoney(product.price, product.currency)}</p>
-                <button type="button">Add to cart</button>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <aside className="cart-panel">
-          <div className="section-heading">
-            <p className="eyebrow">Cart</p>
-            <h2>Current cart</h2>
-          </div>
-
-          <div className="empty-state">
-            <ShoppingCart size={24} />
-            <p>Your cart is ready for products.</p>
-          </div>
-        </aside>
+        <ProductList onAddToCart={addToCart} addingProductId={addingProductId} />
+        <CartView
+          cart={cart}
+          status={cartStatus}
+          onRefresh={loadCart}
+          refreshing={refreshingCart}
+        />
       </main>
     </div>
   );
