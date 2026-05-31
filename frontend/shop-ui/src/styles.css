@@ -172,3 +172,9 @@ h2 {
     grid-template-columns: 1fr;
   }
 }
+
+.gateway-label {
+  margin: 8px 0 0;
+  color: #65758b;
+  font-size: 13px;
+}

@@ -1,5 +1,6 @@
 import React from 'react';
 import { LogIn, ShoppingCart, User, Search } from 'lucide-react';
+import { API_GATEWAY_URL } from './lib/api.js';
 
 const demoProducts = [
   {
@@ -39,6 +40,7 @@ export default function App() {
         <div>
           <p className="eyebrow">NT219 Shopping Platform</p>
           <h1>Shop UI</h1>
+          <p className="gateway-label">Gateway: {API_GATEWAY_URL}</p>
         </div>
 
         <nav className="nav-actions" aria-label="Main navigation">
