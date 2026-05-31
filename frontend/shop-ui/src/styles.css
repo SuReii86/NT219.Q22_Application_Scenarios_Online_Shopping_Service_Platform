@@ -182,6 +182,16 @@ h2 {
     align-items: center;
   }
 
+  .profile-heading,
+  .order-meta {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .order-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
 }
 
 .gateway-label {
@@ -316,4 +326,117 @@ h2 {
   display: grid;
   gap: 16px;
   margin-top: 20px;
+}
+
+.profile-layout {
+  display: grid;
+  gap: 20px;
+  padding: 24px 32px;
+}
+
+.profile-panel {
+  display: grid;
+  gap: 18px;
+}
+
+.profile-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px;
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.order-list {
+  display: grid;
+  gap: 14px;
+}
+
+.order-card {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.order-card h3 {
+  margin-bottom: 0;
+  overflow-wrap: anywhere;
+  font-size: 16px;
+}
+
+.order-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.status-pill.pending {
+  color: #92400e;
+  background: #fef3c7;
+}
+
+.status-pill.paid {
+  color: #166534;
+  background: #dcfce7;
+}
+
+.status-pill.failed {
+  color: #991b1b;
+  background: #fee2e2;
+}
+
+.order-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.order-detail-grid > div {
+  padding: 12px;
+  border-radius: 8px;
+  background: #f5f7fa;
+}
+
+.detail-label {
+  margin-bottom: 4px;
+  color: #65758b;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.order-detail-grid p,
+.order-items {
+  margin-bottom: 0;
+}
+
+.order-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.order-items span {
+  padding: 6px 10px;
+  border-radius: 999px;
+  color: #17202a;
+  background: #eef2f7;
+  font-size: 13px;
 }

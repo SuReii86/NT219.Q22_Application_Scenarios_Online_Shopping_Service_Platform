@@ -5,6 +5,8 @@ import { API_GATEWAY_URL, apiRequest, getJson, postJson } from './lib/api.js';
 import { CartView } from './features/cart/CartView.jsx';
 import { ProductList } from './features/catalog/ProductList.jsx';
 import { CheckoutPage } from './features/checkout/CheckoutPage.jsx';
+import { ProfilePage } from './features/profile/ProfilePage.jsx';
+
 
 
 export default function App() {
@@ -86,6 +88,16 @@ export default function App() {
     return <CheckoutPage onBack={() => setView('shop')} />;
   }
 
+  if (view === 'profile') {
+    return (
+      <ProfilePage
+        authenticated={authenticated}
+        profile={profile}
+        onBack={() => setView('shop')}
+      />
+    );
+  }
+
   return (
     <div className="app-shell">
       <header className="topbar">
@@ -117,10 +129,11 @@ export default function App() {
             Cart
           </button>
 
-          <button type="button" className="nav-button">
+          <button type="button" className="nav-button" onClick={() => setView('profile')}>
             <User size={18} />
             Profile
           </button>
+
         </nav>
       </header>
 
