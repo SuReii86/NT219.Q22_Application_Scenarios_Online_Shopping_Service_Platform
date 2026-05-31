@@ -171,10 +171,61 @@ h2 {
   .product-grid {
     grid-template-columns: 1fr;
   }
+
+    .auth-strip {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 16px 20px;
+  }
+
 }
 
 .gateway-label {
   margin: 8px 0 0;
   color: #65758b;
   font-size: 13px;
+}
+
+.auth-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 32px;
+  background: #fff7ed;
+  border-bottom: 1px solid #fed7aa;
+}
+
+.auth-copy {
+  margin-bottom: 0;
+  color: #17202a;
+  font-weight: 700;
+}
+
+.security-message {
+  margin: 8px 0 0;
+  color: #9a3412;
+  font-size: 13px;
+}
+
+.security-message.error {
+  color: #b91c1c;
+}
+
+.secondary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 8px;
+  color: #17202a;
+  background: #ffffff;
+  border: 1px solid #fed7aa;
+}
+
+.nav-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
 }

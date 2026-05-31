@@ -1,6 +1,7 @@
-import React from 'react';
-import { LogIn, ShoppingCart, User, Search } from 'lucide-react';
-import { API_GATEWAY_URL } from './lib/api.js';
+import React, { useState } from 'react';
+import { LogIn, ShoppingCart, User, Search, ShieldAlert } from 'lucide-react';
+import { useAuth } from './auth/AuthProvider.jsx';
+import { API_GATEWAY_URL, apiRequest } from './lib/api.js';
 
 const demoProducts = [
   {
@@ -34,6 +35,25 @@ function formatMoney(amount, currency) {
 }
 
 export default function App() {
+  const { initialized, authenticated, profile, authError, login, logout } = useAuth();
+  const [securityMessage, setSecurityMessage] = useState('');
+
+  async function testInvalidToken() {
+  setSecurityMessage('Testing invalid token...');
+
+  try {
+    await apiRequest('/api/users/me', {
+      headers: {
+        Authorization: 'Bearer invalid-token-for-demo',
+      },
+    });
+
+    setSecurityMessage('Unexpected success: invalid token was accepted.');
+    } catch (error) {
+      setSecurityMessage(`Invalid token rejected with status ${error.status || 'unknown'}.`);
+    }
+  }
+
   return (
     <div className="app-shell">
       <header className="topbar">
@@ -47,10 +67,19 @@ export default function App() {
           <button type="button" className="icon-button" title="Search">
             <Search size={18} />
           </button>
-          <button type="button" className="nav-button">
-            <LogIn size={18} />
-            Login
-          </button>
+
+          {authenticated ? (
+            <button type="button" className="nav-button" onClick={logout}>
+              <LogIn size={18} />
+              Logout
+            </button>
+          ) : (
+            <button type="button" className="nav-button" onClick={login} disabled={!initialized}>
+              <LogIn size={18} />
+              Login
+            </button>
+          )}
+
           <button type="button" className="nav-button">
             <ShoppingCart size={18} />
             Cart
@@ -61,6 +90,24 @@ export default function App() {
           </button>
         </nav>
       </header>
+
+      <section className="auth-strip">
+        <div>
+          <p className="eyebrow">Authentication</p>
+          <p className="auth-copy">
+            {authenticated
+              ? `Signed in as ${profile?.username || profile?.email || 'Keycloak user'}`
+              : 'Browsing as guest'}
+          </p>
+          {authError ? <p className="security-message error">{authError}</p> : null}
+          {securityMessage ? <p className="security-message">{securityMessage}</p> : null}
+        </div>
+
+        <button type="button" className="secondary-button" onClick={testInvalidToken}>
+          <ShieldAlert size={18} />
+          Test Invalid Token
+        </button>
+      </section>
 
       <main className="shop-layout">
         <section className="catalog-panel">
