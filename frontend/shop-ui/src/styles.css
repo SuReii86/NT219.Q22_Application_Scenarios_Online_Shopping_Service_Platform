@@ -440,3 +440,33 @@ h2 {
   background: #eef2f7;
   font-size: 13px;
 }
+
+.cart-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.quantity-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  color: #17202a;
+  background: #eef2f7;
+}
+
+.quantity-button.danger {
+  color: #991b1b;
+  background: #fee2e2;
+  border-color: #fecaca;
+}
+
+.quantity-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}

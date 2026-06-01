@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { LogIn, Search, ShieldAlert, ShoppingCart, User } from 'lucide-react';
 import { useAuth } from './auth/AuthProvider.jsx';
-import { API_GATEWAY_URL, apiRequest, getJson, postJson } from './lib/api.js';
+import { API_GATEWAY_URL, apiRequest, deleteJson, getJson, patchJson, postJson } from './lib/api.js';
 import { CartView } from './features/cart/CartView.jsx';
 import { ProductList } from './features/catalog/ProductList.jsx';
 import { CheckoutPage } from './features/checkout/CheckoutPage.jsx';
@@ -16,6 +16,7 @@ export default function App() {
   const [cartStatus, setCartStatus] = useState('Login to load your cart.');
   const [refreshingCart, setRefreshingCart] = useState(false);
   const [addingProductId, setAddingProductId] = useState('');
+  const [updatingProductId, setUpdatingProductId] = useState('');
   const [view, setView] = useState('shop');
   
   const loadCart = useCallback(async () => {
@@ -73,6 +74,37 @@ export default function App() {
     } finally {
       setAddingProductId('');
     }
+  }
+
+  async function updateCartItemQuantity(item, nextQuantity) {
+    if (!authenticated || !token) {
+      setCartStatus('Login before updating your cart.');
+      return;
+    }
+
+    setUpdatingProductId(item.productId);
+    setCartStatus(`Updating ${item.name}...`);
+
+    try {
+      if (nextQuantity <= 0) {
+        await deleteJson(`/api/cart/items/${item.productId}`);
+      } else {
+        await patchJson(`/api/cart/items/${item.productId}`, {
+          quantity: nextQuantity,
+        });
+      }
+
+      setCartStatus(`${item.name} updated.`);
+      await loadCart();
+    } catch (error) {
+      setCartStatus(`Update cart failed: ${error.status || 'gateway not running'}.`);
+    } finally {
+      setUpdatingProductId('');
+    }
+  }
+
+  async function removeCartItem(item) {
+    await updateCartItemQuantity(item, 0);
   }
 
   async function testInvalidToken() {
@@ -164,12 +196,17 @@ export default function App() {
 
       <main className="shop-layout">
         <ProductList onAddToCart={addToCart} addingProductId={addingProductId} />
-        <CartView
-          cart={cart}
-          status={cartStatus}
-          onRefresh={loadCart}
-          refreshing={refreshingCart}
-        />
+        
+      <CartView
+        cart={cart}
+        status={cartStatus}
+        onRefresh={loadCart}
+        refreshing={refreshingCart}
+        onUpdateQuantity={updateCartItemQuantity}
+        onRemoveItem={removeCartItem}
+        updatingProductId={updatingProductId}
+      />
+        
       </main>
     </div>
   );
