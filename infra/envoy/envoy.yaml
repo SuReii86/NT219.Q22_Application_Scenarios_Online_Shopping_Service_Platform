@@ -40,7 +40,18 @@ static_resources:
                           route: { cluster: shipping_service }
                         - match: { prefix: "/api/notifications" }
                           route: { cluster: notification_service }
+                      typed_per_filter_config:
+                        envoy.filters.http.cors:
+                          "@type": type.googleapis.com/envoy.extensions.filters.http.cors.v3.CorsPolicy
+                          allow_origin_string_match:
+                            - exact: "http://localhost:5173"
+                            - exact: "http://127.0.0.1:5173"
+                          allow_methods: "GET, PUT, DELETE, POST, OPTIONS, PATCH"
+                          allow_headers: "authorization, content-type, x-idempotency-key"
                 http_filters:
+                  - name: envoy.filters.http.cors
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.cors.v3.Cors
                   - name: envoy.filters.http.ext_authz
                     typed_config:
                       "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthz
@@ -87,7 +98,18 @@ static_resources:
                           route: { cluster: shipping_service }
                         - match: { prefix: "/api/notifications" }
                           route: { cluster: notification_service }
+                      typed_per_filter_config:
+                        envoy.filters.http.cors:
+                          "@type": type.googleapis.com/envoy.extensions.filters.http.cors.v3.CorsPolicy
+                          allow_origin_string_match:
+                            - exact: "http://localhost:5173"
+                            - exact: "http://127.0.0.1:5173"
+                          allow_methods: "GET, PUT, DELETE, POST, OPTIONS, PATCH"
+                          allow_headers: "authorization, content-type, x-idempotency-key"
                 http_filters:
+                  - name: envoy.filters.http.cors
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.cors.v3.Cors
                   - name: envoy.filters.http.ext_authz
                     typed_config:
                       "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthz
