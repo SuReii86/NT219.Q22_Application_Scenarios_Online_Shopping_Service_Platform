@@ -10,7 +10,7 @@ import { ProfilePage } from './features/profile/ProfilePage.jsx';
 
 
 export default function App() {
-  const { initialized, authenticated, profile, authError, login, logout } = useAuth();
+  const { initialized, authenticated, token, profile, authError, login, logout } = useAuth();
   const [securityMessage, setSecurityMessage] = useState('');
   const [cart, setCart] = useState(null);
   const [cartStatus, setCartStatus] = useState('Login to load your cart.');
@@ -19,11 +19,18 @@ export default function App() {
   const [view, setView] = useState('shop');
   
   const loadCart = useCallback(async () => {
-    if (!authenticated) {
-      setCart(null);
-      setCartStatus('Login to load your cart.');
-      return;
-    }
+    
+  if (!initialized) {
+    setCart(null);
+    setCartStatus('Checking login session...');
+    return;
+  }
+
+  if (!authenticated || !token) {
+    setCart(null);
+    setCartStatus('Login to load your cart.');
+    return;
+  }
 
     setRefreshingCart(true);
     setCartStatus('Loading cart...');
@@ -38,7 +45,7 @@ export default function App() {
     } finally {
       setRefreshingCart(false);
     }
-  }, [authenticated]);
+  }, [initialized, authenticated, token]);
 
   useEffect(() => {
     loadCart();
