@@ -19,8 +19,11 @@ export function AuthProvider({ children }) {
   const [authError, setAuthError] = useState(null);
 
   const syncAuthState = useCallback(() => {
-    setAuthenticated(Boolean(keycloak.authenticated));
-    setToken(keycloak.token || null);
+    const nextToken = keycloak.token || null;
+
+    setAccessTokenProvider(() => nextToken);
+    setAuthenticated(Boolean(keycloak.authenticated && nextToken));
+    setToken(nextToken);
 
     if (keycloak.tokenParsed) {
       setProfile({
@@ -38,10 +41,12 @@ export function AuthProvider({ children }) {
 
     keycloak
       .init({
-        // onLoad: 'check-sso',
-        pkceMethod: 'S256',
-        checkLoginIframe: false,
-      })
+          onLoad: 'check-sso',
+          silentCheckSsoRedirectUri: `${window.location.origin}/silent-check-sso.html`,
+          pkceMethod: 'S256',
+          checkLoginIframe: false,
+        })
+  
       .then(() => {
         if (!mounted) return;
         syncAuthState();
@@ -59,12 +64,10 @@ export function AuthProvider({ children }) {
   }, [syncAuthState]);
 
   useEffect(() => {
-    setAccessTokenProvider(() => keycloak.token || token || null);
-
     return () => {
       clearAccessTokenProvider();
     };
-  }, [token]);
+  }, []);
 
   useEffect(() => {
     const interval = window.setInterval(() => {

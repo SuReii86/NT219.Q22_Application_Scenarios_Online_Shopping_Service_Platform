@@ -15,6 +15,8 @@ services:
   vault-init:
     image: hashicorp/vault:latest
     container_name: vault-init
+    cap_add:
+      - IPC_LOCK
     depends_on:
       - vault
     environment:
